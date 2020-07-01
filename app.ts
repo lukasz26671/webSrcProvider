@@ -24,10 +24,13 @@ app.get('/', (req, res) => {
 
 app.get('/readplaylist', (req, res) => {
     res.header('Access-Control-Allow-Origin: *')
-    if(req.query.a.toString().toLowerCase() == 'ping') {
-        res.status(200);
-        return;
-    }
+    try {
+        if(req.query.a.toString().toLowerCase() == 'ping') {
+            res.status(200);
+            return;
+        }
+    } catch(err) {}
+    
 
     res.setHeader('Content-Type', "application/json")
     console.log('Sent headers: ', res.headersSent)
