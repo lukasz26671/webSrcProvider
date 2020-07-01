@@ -17,6 +17,10 @@ let httpServer = app.listen(port, ()=>{
     console.log(`Server running on port ${port}`)
 })
 
+app.get('/', (req, res) => {
+    res.status(200)
+});
+
 app.get('/readplaylist', (req, res) => {
     res.header('Content-Type: application/json')
     GetSources.then((data : SourceResponse) => {
