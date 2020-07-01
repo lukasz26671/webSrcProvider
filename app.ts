@@ -18,7 +18,7 @@ let httpServer = app.listen(port, ()=>{
 })
 
 app.get('/', (req, res) => {
-    res.setHeader('Access-Control-Allow-Origin',  'https://lukasz26671.github.io')
+    res.header('Access-Control-Allow-Origin: https://lukasz26671.github.io')
     res.status(200)
 });
 
