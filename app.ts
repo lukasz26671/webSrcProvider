@@ -43,7 +43,7 @@ var GetSources = new Promise((resolve, reject) => {
     try {
         gSheets.spreadsheets.values.batchGet({
             spreadsheetId: '1JhbSnAQdcs4QGnCUx6fZ0ujV9G2k-Wjvs1YoTmoD2i0',
-            ranges: ['C3:C60', 'D3:D90', 'E3:E90']
+            ranges: ['C3:C120', 'D3:D120', 'E3:E120']
         }, (err, res) => {
             if(err) return console.log('Error ' + err)
         
