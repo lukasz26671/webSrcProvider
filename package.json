@@ -22,6 +22,7 @@
         "@types/gapi": "0.0.39",
         "express": "^4.17.1",
         "googleapis": "^39.2.0",
+        "node-fetch": "^2.6.0",
         "typescript": "3.4.3"
     }
 }

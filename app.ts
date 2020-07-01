@@ -4,9 +4,11 @@ import * as express from 'express'
 const apikey = process.env.APIKEY
 const port = process.env.PORT || 3300
 
+
+
 const gSheets = google.sheets({
     version: "v4",
-    auth: apikey || process.env.apikey
+    auth: apikey
 })
 
 const app = express();
@@ -34,7 +36,7 @@ var GetSources = new Promise((resolve, reject) => {
     try {
         gSheets.spreadsheets.values.batchGet({
             spreadsheetId: '1JhbSnAQdcs4QGnCUx6fZ0ujV9G2k-Wjvs1YoTmoD2i0',
-            ranges: ['C3:C60', 'D3:D60', 'E3:E60']
+            ranges: ['C3:C60', 'D3:D90', 'E3:E90']
         }, (err, res) => {
             if(err) return console.log('Error ' + err)
         
@@ -55,12 +57,15 @@ var GetSources = new Promise((resolve, reject) => {
                 response.IDs.push(value[0])
             });
     
+            response.authors.map(elem => elem.toUpperCase())
+            response.titles.map(elem => elem.toUpperCase())
+            response.IDs.map(elem => elem.toUpperCase())
+
             resolve(response)
         }) 
     } catch (error) {
         reject(error)
     }
 })
-
-
 //#endregion
+
