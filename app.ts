@@ -39,11 +39,13 @@ interface SourceResponse {
     IDs: Array<string>
 }
 
+let emptyIndexes = [];
+
 var GetSources = new Promise((resolve, reject) => {
     try {
         gSheets.spreadsheets.values.batchGet({
             spreadsheetId: '1JhbSnAQdcs4QGnCUx6fZ0ujV9G2k-Wjvs1YoTmoD2i0',
-            ranges: ['C3:C120', 'D3:D120', 'E3:E120']
+            ranges: ['C3:C123', 'D3:D123', 'E3:E123']
         }, (err, res) => {
             if(err) return console.log('Error ' + err)
         
@@ -53,7 +55,7 @@ var GetSources = new Promise((resolve, reject) => {
                 "IDs": []
             }
     
-            let emptyIndexes = [];
+            
 
             let i : number;
             res.data.valueRanges[0].values.forEach(value => {
@@ -61,27 +63,53 @@ var GetSources = new Promise((resolve, reject) => {
                     response.authors.push(value[0])
                     i++;
                 } else {
-                    emptyIndexes.push(i)
+                    if(!emptyIndexes.includes(i))
+                        emptyIndexes.push(i)
                 }
             });
             let j : number;
             res.data.valueRanges[1].values.forEach(value => {
-                if(value[0] != '' && emptyIndexes.includes(j)) {
+                if(value[0] != '') {
                     response.titles.push(value[0])
                     j++;
+                } else {
+                    if(!emptyIndexes.includes(j))
+                        emptyIndexes.push(j)
                 }
             });
             let k : number;
             res.data.valueRanges[2].values.forEach(value => {
-                if(value[0] != '' && emptyIndexes.includes(k)) {
+                if(value[0] != '') {
                     response.IDs.push(value[0])
                     k++;
+                } else {
+                    if(!emptyIndexes.includes(k))
+                        emptyIndexes.push(k)
                 }
             });
-    
-            response.authors.map(elem => elem.toUpperCase())
-            response.titles.map(elem => elem.toUpperCase())
-            response.IDs.map(elem => elem.toUpperCase())
+            
+            
+            i = 0;
+            response.authors.map(elem => { 
+                if(elem != '') i++
+                if(emptyIndexes.includes(i)) 
+                    response.IDs.splice(i, 1);
+                return elem.toUpperCase();
+            })
+            j = 0;
+            response.titles.map(elem => {
+                if(elem != '') j++
+                if(emptyIndexes.includes(j)) 
+                    response.IDs.splice(j, 1);
+                return elem.toUpperCase();
+            })
+            k = 0;
+            response.IDs.map(elem => {
+                if(elem != '') k++
+                if(emptyIndexes.includes(k)) 
+                    response.IDs.splice(k, 1);
+                return elem.toUpperCase();
+            })
 
             resolve(response)
         }) 
