@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
 app.get('/readplaylist', (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
     try {
-        if(req.query.a.toString().toLowerCase() == 'ping') {
+        if(req.query.a == 'ping') {
             res.status(200);
             return;
         }
