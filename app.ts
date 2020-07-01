@@ -55,13 +55,16 @@ var GetSources = new Promise((resolve, reject) => {
     
     
             res.data.valueRanges[0].values.forEach(value => {
-                response.authors.push(value[0])
+                if(value[0] != '')
+                    response.authors.push(value[0])
             });
             res.data.valueRanges[1].values.forEach(value => {
-                response.titles.push(value[0])
+                if(value[0] != '') 
+                    response.titles.push(value[0])
             });
             res.data.valueRanges[2].values.forEach(value => {
-                response.IDs.push(value[0])
+                if(value[0] != '') 
+                    response.IDs.push(value[0])
             });
     
             response.authors.map(elem => elem.toUpperCase())
