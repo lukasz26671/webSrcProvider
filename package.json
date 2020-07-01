@@ -1,0 +1,27 @@
+{
+    "name": "websourceprovider",
+    "version": "1.0.0",
+    "description": "a web app that fetches spreadsheet playlist data",
+    "main": "app.ts",
+    "scripts": {
+        "start": "node app.js",
+        "build": "tsc app.ts"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/lukasz26671/webSrcProvider"
+    },
+    "author": "lukasz26671",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/lukasz26671/webSrcProvider/issues"
+    },
+    "homepage": "https://website-sourceprovider.herokuapp.com/",
+    "dependencies": {
+        "@types/express": "^4.17.6",
+        "@types/gapi": "0.0.39",
+        "express": "^4.17.1",
+        "googleapis": "^39.2.0",
+        "typescript": "3.4.3"
+    }
+}
