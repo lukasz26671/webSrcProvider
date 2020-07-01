@@ -92,22 +92,29 @@ var GetSources = new Promise((resolve, reject) => {
             i = 0;
             response.authors.map(elem => { 
                 if(elem != '') i++
-                if(emptyIndexes.includes(i)) 
+                if(emptyIndexes.includes(i)) {
                     response.IDs.splice(i, 1);
+                    console.log(`Removed - ROW(AUTHORS) @ index ${i} from response`)
+                }
                 return elem.toUpperCase();
             })
             j = 0;
             response.titles.map(elem => {
                 if(elem != '') j++
-                if(emptyIndexes.includes(j)) 
+                if(emptyIndexes.includes(j)) {
                     response.IDs.splice(j, 1);
+                    console.log(`Removed - ROW(TITLES) @ index ${j} from response`)
+                }
                 return elem.toUpperCase();
             })
             k = 0;
             response.IDs.map(elem => {
                 if(elem != '') k++
-                if(emptyIndexes.includes(k)) 
+                if(emptyIndexes.includes(k)) {
                     response.IDs.splice(k, 1);
+                    console.log(`Removed - ROW(IDS) @ index ${k} from response`)
+                }
+
                 return elem.toUpperCase();
             })
 
