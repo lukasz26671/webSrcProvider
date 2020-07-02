@@ -4,8 +4,6 @@ import * as express from 'express'
 const apikey = process.env.APIKEY
 const port = process.env.PORT || 3300
 
-
-
 const gSheets = google.sheets({
     version: "v4",
     auth: apikey
@@ -24,13 +22,6 @@ app.get('/', (req, res) => {
 
 app.get('/readplaylist', (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
-    try {
-        if(req.query.a == 'ping') {
-            res.status(200);
-            return;
-        }
-    } catch(err) {}
-    
 
     res.setHeader('Content-Type', "application/json")
     console.log('Sent headers: ', res.headersSent)
