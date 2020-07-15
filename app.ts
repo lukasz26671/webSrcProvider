@@ -3,8 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const { config } = require('./config.js');
 
-// const apikey = process.env.APIKEY
-const apikey = 'AIzaSyDKHBr8xr5BsFwg-cIlQOCk5OyllWzz79s';
+const apikey = process.env.APIKEY
 const port = process.env.PORT || 3300
 
 const gSheets = google.sheets({
