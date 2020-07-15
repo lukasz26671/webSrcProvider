@@ -1,7 +1,10 @@
-import { google } from 'googleapis'
-import * as express from 'express'
+const { google } = require('googleapis');
+const express = require('express');
+const cors = require('cors');
+const { config } = require('./config.js');
 
-const apikey = process.env.APIKEY
+// const apikey = process.env.APIKEY
+const apikey = 'AIzaSyDKHBr8xr5BsFwg-cIlQOCk5OyllWzz79s';
 const port = process.env.PORT || 3300
 
 const gSheets = google.sheets({
@@ -11,31 +14,124 @@ const gSheets = google.sheets({
 
 const app = express();
 
+let lastRequestSuccessful = true;
+
+if (config.corsEnabled)
+    app.use(cors());
+
+if (config.dataCaching) {
+    if (config.cacheTime > 0)
+        CacheUpdate(config.cacheTime)
+    else
+        CacheUpdate(600)
+}
+
 let httpServer = app.listen(port, () => {
     console.log(`Server running on port ${port}`)
 })
 
 app.get('/', (req, res) => {
     res.header('Access-Control-Allow-Origin: *')
-    res.status(200)
+    res.status(200).send(`Everything is up and running! \n Last request: ${lastRequestSuccessful ? 'succeeded.' : 'failed.'} `)
 });
 
-app.get('/readplaylist', (req, res) => {
+function IsEmpty(arr : Array<any>) {
+    return arr.length === 0 ? true : false;
+}
+
+var cache: SourceResponse = {
+    authors: [],
+    titles: [],
+    IDs: []
+}
+
+app.get('/api/readplaylist', (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
 
     res.setHeader('Content-Type', "application/json")
-    console.log('Sent headers: ', res.headersSent)
 
-    let emptyIndexes = [];
+    if(config.dataCaching && cache != null) {
+        if(IsEmpty(cache.authors) || IsEmpty(cache.titles) && IsEmpty(cache.IDs)) {
+            const _statusCode = 500;
+            const _statusMessage = "API error."
+            res.statusMessage = `${_statusCode}: ${_statusMessage}`;
+            res.status(_statusCode).send(res.statusMessage)
+        } else {
+            res.status(302).send(cache);
+        }
+    } else {
+        ApiRequest().then((data: SourceResponse) => {
+            res.status(302).send(data)
+        }).catch((err) => {
+            const _statusCode = 500;
+            const _statusMessage = "API error."
+            res.statusMessage = `${_statusCode}: ${_statusMessage}`;
+            res.status(_statusCode).send(res.statusMessage)
+        })
+    }
+})
 
-    var GetSources = new Promise((resolve, reject) => {
+//#region API
+
+/**
+ * Odświeża cache na każdy określony cykl
+ * ! Używać w kodzie tylko jednokrotnie, wielokrotność spowoduje rozdwojenie procesu.
+ * TODO: Przerobienie na async/await.
+ * @param seconds Czas w sekundach do odświeżenia cache
+ * @returns void
+ */
+async function CacheUpdate(seconds: number) {
+    let time = seconds * 1000;
+
+    GetSourcesCache().then( (res : SourceResponse)=> {
+        let time = new Date();
+        cache = res;
+        console.log(`Cache updated @ ${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}`);
+    }).catch(err => {
+        console.log(`Failed to update cache`, err);
+    })
+
+    setTimeout(() => {
+        CacheUpdate(seconds)
+    }, time);
+}
+
+interface SourceResponse {
+    authors: Array<string>,
+    titles: Array<string>,
+    IDs: Array<string>
+}
+
+/** Wykonuje zapytanie przez API google sheets
+ *  TODO: async/await
+ *  @returns SourceResponse
+ */
+async function GetSourcesCache() {
+
+    let response : SourceResponse;
+
+    Promise.resolve(ApiRequest()).then((data: SourceResponse) => {
+        response = data;
+    })
+
+    return response;
+}
+
+/** 
+ *  todo: Polepszenie czytelności kodu, przerobienie promise na async/await
+ *  @returns Promise
+ */
+async function ApiRequest() {
+    return new Promise((resolve, reject) => {
         try {
+            let emptyIndexes = [];
+
             gSheets.spreadsheets.values.batchGet({
                 spreadsheetId: '1JhbSnAQdcs4QGnCUx6fZ0ujV9G2k-Wjvs1YoTmoD2i0',
                 ranges: ['C3:C123', 'D3:D123', 'E3:E123']
             }, (err, resp) => {
-                
-                if(err) {
+
+                if (err) {
                     reject(err.message);
                     return;
                 }
@@ -45,9 +141,9 @@ app.get('/readplaylist', (req, res) => {
                     "titles": [],
                     "IDs": []
                 }
-    
-    
-    
+
+
+
                 let i: number;
                 resp.data.valueRanges[0].values.forEach(value => {
                     if (value[0] != '') {
@@ -78,8 +174,8 @@ app.get('/readplaylist', (req, res) => {
                             emptyIndexes.push(k)
                     }
                 });
-    
-    
+
+
                 i = 0;
                 response.authors.map(elem => {
                     if (elem != '') i++
@@ -106,34 +202,24 @@ app.get('/readplaylist', (req, res) => {
                         console.log(`Removed - ROW(IDS) @ index ${k} from response`)
                     }
                 })
-    
                 resolve(response)
             })
         } catch (err) {
             reject(err);
         }
 
-    }).then((data: SourceResponse) => {
-        res.status(302)
-        res.send(data)
-    }).catch((err) => {
-        res.statusMessage = "500: API error";
-        res.send( 
-            res.statusMessage
-        )
-        res.statusCode = 500;
     })
-})
-
-//#region API
-
-interface SourceResponse {
-    authors: Array<string>,
-    titles: Array<string>,
-    IDs: Array<string>
 }
 
+/*
+   ! Używać poprzez app.use() na końcu kodu
+   TODO: Bardziej przejrzysty error message
+*/
+function NotFound(req, res, next) {
+    res.status(404).send('404: Not found')
+}
 
+app.use(NotFound);
 
 //#endregion
 
