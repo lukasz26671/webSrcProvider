@@ -1,6 +1,6 @@
 
 const config =  {
-    "dataCaching": true,
+    "dataCaching": false,
     "cacheTime": 660,
     "corsEnabled": true,
     "limitRequests": false
