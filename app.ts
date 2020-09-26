@@ -43,7 +43,11 @@ let httpServer = app.listen(port, () => {
 
 app.get('/', (req, res) => {
     res.header('Access-Control-Allow-Origin: *')
-    res.status(200).send(`Everything is up and running! \n Last request: ${lastRequestSuccessful ? 'succeeded.' : 'failed.'} `)
+    res.status(200).send(
+        `Everything is up and running! \n Last request: ${lastRequestSuccessful ? 'succeeded.' : 'failed.'} 
+        <br><a href="./api/visualized/readplaylist">Display playlist as a table</a>
+        <br><a href="./api/readplaylist">Display playlist as a JSON string</a>
+        `)
 });
 
 function IsEmpty(arr : Array<any>) {
