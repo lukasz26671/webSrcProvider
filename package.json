@@ -27,9 +27,8 @@
         "express": "^4.17.1",
         "googleapis": "^39.2.0",
         "node-fetch": "^2.6.0",
-        "typescript": "3.4.3"
-    },
-    "devDependencies": {
+        "typescript": "3.4.3",
         "dotenv": "8.2.0"
+
     }
 }
