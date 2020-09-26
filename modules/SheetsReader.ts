@@ -71,7 +71,7 @@ module.exports = class SheetsReader {
 
             const MapArray = () => {
                 authors.forEach((value, i) => {
-                    if (value[0] != '' && !emptyIndexes.includes(i)) {
+                    if (value[0] != '' && value[0]!=undefined && !emptyIndexes.includes(i)) {
                         response.authors.push(value[0].toUpperCase())
                     } else {
                         if (!emptyIndexes.includes(i))
@@ -80,7 +80,7 @@ module.exports = class SheetsReader {
                 });
         
                 titles.forEach((value, i) => {
-                    if (value[0] != '' && !emptyIndexes.includes(i)) {
+                    if (value[0] != '' && value[0]!=undefined && !emptyIndexes.includes(i)) {
                         response.titles.push(value[0].toUpperCase())
                     } else {
                         if (!emptyIndexes.includes(i))
@@ -88,7 +88,7 @@ module.exports = class SheetsReader {
                     }
                 });
                 IDs.forEach((value, i) => {
-                    if (value[0] != '' && !emptyIndexes.includes(i)) {
+                    if (value[0] != '' && value[0]!=undefined &&!emptyIndexes.includes(i)) {
                         response.IDs.push(value[0])
                     } else {
                         if (!emptyIndexes.includes(i))
