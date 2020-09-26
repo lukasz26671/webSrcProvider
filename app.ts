@@ -1,33 +1,45 @@
-const { google } = require('googleapis');
+
 const express = require('express');
 const cors = require('cors');
-const { config } = require('./config.js');
+const { Config } = require('./modules/config');
+const SheetsReader = require('./modules/SheetsReader')
 
+require('dotenv').config();
+
+// import { SheetsReader } from './modules/SheetsReader'
 const apikey = process.env.APIKEY
 const port = process.env.PORT || 3300
-
-const gSheets = google.sheets({
-    version: "v4",
-    auth: apikey
-})
 
 const app = express();
 
 let lastRequestSuccessful = true;
+var sheetReader = new SheetsReader(apikey);
 
-if (config.corsEnabled)
+if (Config.corsEnabled)
     app.use(cors());
 
-if (config.dataCaching) {
-    if (config.cacheTime > 0)
-        CacheUpdate(config.cacheTime)
-    else
-        CacheUpdate(600)
+if (Config.dataCaching) {
+    if (Config.cacheTime > 0) {
+        if(Config.asyncCaching) {
+            CacheUpdateAsync(Config.cacheTime)
+        } else {
+            CacheUpdate(Config.cacheTime)
+        }
+    } else {
+        if(Config.asyncCaching) {
+            CacheUpdateAsync(600)
+        } else {
+            CacheUpdate(600)
+        }
+    }
 }
+
 
 let httpServer = app.listen(port, () => {
     console.log(`Server running on port ${port}`)
 })
+
+
 
 app.get('/', (req, res) => {
     res.header('Access-Control-Allow-Origin: *')
@@ -38,187 +50,148 @@ function IsEmpty(arr : Array<any>) {
     return arr.length === 0 ? true : false;
 }
 
-var cache: SourceResponse = {
+var cache = {
     authors: [],
     titles: [],
     IDs: []
 }
 
-app.get('/api/readplaylist', (req, res) => {
+app.get('/api/readplaylist', async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
 
     res.setHeader('Content-Type', "application/json")
 
-    if(config.dataCaching && cache != null) {
+    if(Config.dataCaching && cache != null) {
         if(IsEmpty(cache.authors) || IsEmpty(cache.titles) && IsEmpty(cache.IDs)) {
-            const _statusCode = 500;
-            const _statusMessage = "API error."
-            res.statusMessage = `${_statusCode}: ${_statusMessage}`;
-            res.status(_statusCode).send(res.statusMessage)
+            res.status(503).send("503: API error.")
         } else {
-            res.status(302).send(cache);
+            res.status(200).send(cache);
         }
     } else {
-        ApiRequest().then((data: SourceResponse) => {
-            res.status(302).send(data)
-        }).catch((err) => {
-            const _statusCode = 500;
-            const _statusMessage = "API error."
-            res.statusMessage = `${_statusCode}: ${_statusMessage}`;
-            res.status(_statusCode).send(res.statusMessage)
-        })
+         try {
+            res.status(200).send(
+                await sheetReader.GetPlaylist()
+            );
+        } catch (error) {
+            res.status(503).send("503: API error.")
+        }
+
     }
 })
 
-//#region API
 
-/**
- * Odświeża cache na każdy określony cykl
- * ! Używać w kodzie tylko jednokrotnie, wielokrotność spowoduje rozdwojenie procesu.
- * TODO: Przerobienie na async/await.
- * @param seconds Czas w sekundach do odświeżenia cache
- * @returns void
- */
-async function CacheUpdate(seconds: number) {
-    let time = seconds * 1000;
+async function CacheUpdateAsync (seconds : number) {
+    const time = seconds * 1000;
+    const localTime = new Date();
 
-    GetSourcesCache().then( (res : SourceResponse)=> {
-        let time = new Date();
-        cache = res;
-        console.log(`Cache updated @ ${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}`);
-    }).catch(err => {
-        console.log(`Failed to update cache`, err);
-    })
+    try {
+        cache = await sheetReader.GetPlaylist();
+        console.log(`Cache updated @ ${localTime.getHours()}:${localTime.getMinutes()}:${localTime.getSeconds()}`);
+
+    } catch (error) {
+        console.log("Error updating cache", error);
+    }
+
+
 
     setTimeout(() => {
-        CacheUpdate(seconds)
+        CacheUpdateAsync(seconds)
     }, time);
 }
 
-interface SourceResponse {
-    authors: Array<string>,
-    titles: Array<string>,
-    IDs: Array<string>
-}
+function CacheUpdate (seconds : number) {
+    const time = seconds * 1000;
+    const localTime = new Date();
 
-/** Wykonuje zapytanie przez API google sheets
- *  TODO: async/await
- *  @returns SourceResponse
- */
-async function GetSourcesCache() {
-
-    let response : SourceResponse;
-
-    Promise.resolve(ApiRequest()).then((data: SourceResponse) => {
-        response = data;
+    sheetReader.GetPlaylist().then((res) => {
+        cache = res;
+        console.log(`Cache updated @ ${localTime.getHours()}:${localTime.getMinutes()}:${localTime.getSeconds()}`);
+    }).catch((err) => {
+        console.log("Error updating cache", err);
     })
 
-    return response;
+
+    setTimeout(() => {
+        CacheUpdateAsync(seconds)
+    }, time);
 }
 
-/** 
- *  todo: Polepszenie czytelności kodu, przerobienie promise na async/await
- *  @returns Promise
- */
-async function ApiRequest() {
-    return new Promise((resolve, reject) => {
-        try {
-            let emptyIndexes = [];
 
-            gSheets.spreadsheets.values.batchGet({
-                spreadsheetId: '1JhbSnAQdcs4QGnCUx6fZ0ujV9G2k-Wjvs1YoTmoD2i0',
-                ranges: ['C3:C123', 'D3:D123', 'E3:E123']
-            }, (err, resp) => {
-
-                if (err) {
-                    reject(err.message);
-                    return;
-                }
-
-                const response: SourceResponse = {
-                    "authors": [],
-                    "titles": [],
-                    "IDs": []
-                }
-
-
-
-                let i: number;
-                resp.data.valueRanges[0].values.forEach(value => {
-                    if (value[0] != '') {
-                        response.authors.push(value[0])
-                        i++;
-                    } else {
-                        if (!emptyIndexes.includes(i))
-                            emptyIndexes.push(i)
-                    }
-                });
-                let j: number;
-                resp.data.valueRanges[1].values.forEach(value => {
-                    if (value[0] != '') {
-                        response.titles.push(value[0])
-                        j++;
-                    } else {
-                        if (!emptyIndexes.includes(j))
-                            emptyIndexes.push(j)
-                    }
-                });
-                let k: number;
-                resp.data.valueRanges[2].values.forEach(value => {
-                    if (value[0] != '') {
-                        response.IDs.push(value[0])
-                        k++;
-                    } else {
-                        if (!emptyIndexes.includes(k))
-                            emptyIndexes.push(k)
-                    }
-                });
-
-
-                i = 0;
-                response.authors.map(elem => {
-                    if (elem != '') i++
-                    if (emptyIndexes.includes(i)) {
-                        response.IDs.splice(i, 1);
-                        console.log(`Removed - ROW(AUTHORS) @ index ${i} from response`)
-                    }
-                    return elem.toUpperCase();
-                })
-                j = 0;
-                response.titles.map(elem => {
-                    if (elem != '') j++
-                    if (emptyIndexes.includes(j)) {
-                        response.IDs.splice(j, 1);
-                        console.log(`Removed - ROW(TITLES) @ index ${j} from response`)
-                    }
-                    return elem.toUpperCase();
-                })
-                k = 0;
-                response.IDs.map(elem => {
-                    if (elem != '') k++
-                    if (emptyIndexes.includes(k)) {
-                        response.IDs.splice(k, 1);
-                        console.log(`Removed - ROW(IDS) @ index ${k} from response`)
-                    }
-                })
-                resolve(response)
-            })
-        } catch (err) {
-            reject(err);
-        }
-
-    })
-}
-
-/*
-   ! Używać poprzez app.use() na końcu kodu
-   TODO: Bardziej przejrzysty error message
-*/
 function NotFound(req, res, next) {
     res.status(404).send('404: Not found')
 }
 
-app.use(NotFound);
 
 //#endregion
 
+
+app.get('/api/visualized/readplaylist', async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    let table = `
+    <link href="https://fonts.googleapis.com/css2?family=Secular One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <table>
+    <tr>
+        <th>Author</th>
+        <th>Title</th>
+        <th>ID</th>
+    </tr>
+    `;
+
+    if(Config.dataCaching && cache != null) {
+        if(IsEmpty(cache.authors) || IsEmpty(cache.titles) && IsEmpty(cache.IDs)) {
+            res.status(503).send("503: API error.")
+        } else {
+            const inRangeCache = (i : number) => (i < cache.authors.length && i < cache.titles.length && i < cache.IDs.length);
+            
+            for (let i = 0; inRangeCache(i); i++) {;
+                let elements = [cache.authors[i], cache.titles[i], cache.IDs[i]];
+
+                table += `
+                <tr>
+                    <td>${elements[0]}</td>
+                    <td>${elements[1]}</td>
+                    <td>${elements[2]}</td>
+                </tr>
+                `
+            }
+
+            table += '</table>'
+
+            table += `<br><p>Total track length:${cache.authors.length}</p>`
+            table += `<style> td { font-family: 'Roboto', sans-serif; border: 1px solid black; background-color: #faedddfd} th { font-family: 'Secular One'; border: 1px solid black;} </style>`
+
+            res.status(200).send(table);
+        }
+    } else {
+        try {
+            let response = await sheetReader.GetPlaylist();
+
+            const inRange = (i : number) => (i < response.authors.length && i < response.titles.length && i < response.IDs.length);
+            
+            for (let i = 0; inRange(i); i++) {;
+                let elements = [response.authors[i], response.titles[i], response.IDs[i]];
+
+                table += `
+                <tr>
+                    <td>${elements[0]}</td>
+                    <td>${elements[1]}</td>
+                    <td>${elements[2]}</td>
+                </tr>
+                `
+            }
+
+            table += '</table>'
+            table += `<br><p>Total track length:${response.authors.length}</p>`
+            table += `<style> td { font-family: 'Roboto', sans-serif; border: 1px solid black; background-color: #faedddfd} th { font-family: 'Secular One'; border: 1px solid black;} </style>`
+            res.status(200).send(table);
+
+        } catch (error) {
+            res.status(503).send("503: API error.")
+        }
+
+    }
+
+})
+
+app.use(NotFound);
