@@ -65,7 +65,7 @@ app.get('/api/readplaylist', async (req, res) => {
 
     res.setHeader('Content-Type', "application/json")
 
-    if(Config.dataCaching && cache != null) {
+    if(Config.dataCaching && cache != null && req.query.forceRefresh===false) {
         if(IsEmpty(cache.authors) || IsEmpty(cache.titles) && IsEmpty(cache.IDs)) {
             res.status(503).send("503: API error.")
         } else {
@@ -76,6 +76,10 @@ app.get('/api/readplaylist', async (req, res) => {
             res.status(200).send(
                 await sheetReader.GetPlaylist()
             );
+
+            if(req.query.forceUpdate===true) {
+                CacheUpdateAsync(0, {noupdate: true});
+            }
         } catch (error) {
             res.status(503).send("503: API error.")
         }
@@ -84,7 +88,7 @@ app.get('/api/readplaylist', async (req, res) => {
 })
 
 
-async function CacheUpdateAsync (seconds : number) {
+async function CacheUpdateAsync (seconds : number, {noupdate} = {noupdate: false}) {
     const time = seconds * 1000;
     const localTime = new Date();
 
@@ -96,14 +100,15 @@ async function CacheUpdateAsync (seconds : number) {
         console.log("Error updating cache", error);
     }
 
+    if(!noupdate) {
+        setTimeout(() => {
+            CacheUpdateAsync(seconds)
+        }, time);
+    }
 
-
-    setTimeout(() => {
-        CacheUpdateAsync(seconds)
-    }, time);
 }
 
-function CacheUpdate (seconds : number) {
+function CacheUpdate (seconds : number, {noupdate} = {noupdate: false}) {
     const time = seconds * 1000;
     const localTime = new Date();
 
@@ -113,11 +118,12 @@ function CacheUpdate (seconds : number) {
     }).catch((err) => {
         console.log("Error updating cache", err);
     })
-
-
-    setTimeout(() => {
-        CacheUpdateAsync(seconds)
-    }, time);
+ 
+    if(!noupdate) {
+        setTimeout(() => {
+            CacheUpdateAsync(seconds)
+        }, time);
+    }
 }
 
 
@@ -129,7 +135,7 @@ function NotFound(req, res, next) {
 //#endregion
 
 
-app.get('/api/visualized/readplaylist', async (req, res) => {
+app.get('/api/visualized/readplaylist/', async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
     let table = `
     <link href="https://fonts.googleapis.com/css2?family=Secular One&display=swap" rel="stylesheet">
@@ -142,7 +148,7 @@ app.get('/api/visualized/readplaylist', async (req, res) => {
     </tr>
     `;
 
-    if(Config.dataCaching && cache != null) {
+    if(Config.dataCaching && cache != null && req.query.forceRefresh===false) {
         if(IsEmpty(cache.authors) || IsEmpty(cache.titles) && IsEmpty(cache.IDs)) {
             res.status(503).send("503: API error.")
         } else {
@@ -190,6 +196,9 @@ app.get('/api/visualized/readplaylist', async (req, res) => {
             table += `<style> td { font-family: 'Roboto', sans-serif; border: 1px solid black; background-color: #faedddfd} th { font-family: 'Secular One'; border: 1px solid black;} </style>`
             res.status(200).send(table);
 
+            if(req.query.forceUpdate===true) {
+                CacheUpdateAsync(0, {noupdate: true});
+            }
         } catch (error) {
             res.status(503).send("503: API error.")
         }
