@@ -1,6 +1,6 @@
 const Config = {
     dataCaching: true,
-    cacheTime: 660,
+    cacheTime: 330,
     corsEnabled: true,
     limitRequests: false,
     asyncCaching: true,
