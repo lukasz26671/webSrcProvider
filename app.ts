@@ -11,22 +11,22 @@ const apikey = process.env.APIKEY
 const port = process.env.PORT || 3300
 
 const app = express();
+const sheetReader = new SheetsReader(apikey, '1JhbSnAQdcs4QGnCUx6fZ0ujV9G2k-Wjvs1YoTmoD2i0');
 
 let lastRequestSuccessful = true;
-var sheetReader = new SheetsReader(apikey);
 
 if (Config.corsEnabled)
     app.use(cors());
 
 if (Config.dataCaching) {
     if (Config.cacheTime > 0) {
-        if(Config.asyncCaching) {
+        if (Config.asyncCaching) {
             CacheUpdateAsync(Config.cacheTime)
         } else {
             CacheUpdate(Config.cacheTime)
         }
     } else {
-        if(Config.asyncCaching) {
+        if (Config.asyncCaching) {
             CacheUpdateAsync(600)
         } else {
             CacheUpdate(600)
@@ -50,7 +50,7 @@ app.get('/', (req, res) => {
         `)
 });
 
-function IsEmpty(arr : Array<any>) {
+function IsEmpty(arr: Array<any>) {
     return arr.length === 0 ? true : false;
 }
 
@@ -65,20 +65,20 @@ app.get('/api/readplaylist', async (req, res) => {
 
     res.setHeader('Content-Type', "application/json")
 
-    if(Config.dataCaching && cache != null && req.query.forceRefresh===false) {
-        if(IsEmpty(cache.authors) || IsEmpty(cache.titles) && IsEmpty(cache.IDs)) {
+    if (Config.dataCaching && cache != null && req.query.forceRefresh === false) {
+        if (IsEmpty(cache.authors) || IsEmpty(cache.titles) && IsEmpty(cache.IDs)) {
             res.status(503).send("503: API error.")
         } else {
             res.status(200).send(cache);
         }
     } else {
-         try {
+        try {
             res.status(200).send(
                 await sheetReader.GetPlaylist()
             );
 
-            if(req.query.forceUpdate===true) {
-                CacheUpdateAsync(0, {noupdate: true});
+            if (req.query.forceUpdate === true) {
+                CacheUpdateAsync(0, { noupdate: true });
             }
         } catch (error) {
             res.status(503).send("503: API error.")
@@ -88,7 +88,7 @@ app.get('/api/readplaylist', async (req, res) => {
 })
 
 
-async function CacheUpdateAsync (seconds : number, {noupdate} = {noupdate: false}) {
+async function CacheUpdateAsync(seconds: number, { noupdate } = { noupdate: false }) {
     const time = seconds * 1000;
     const localTime = new Date();
 
@@ -100,7 +100,7 @@ async function CacheUpdateAsync (seconds : number, {noupdate} = {noupdate: false
         console.log("Error updating cache", error);
     }
 
-    if(!noupdate) {
+    if (!noupdate) {
         setTimeout(() => {
             CacheUpdateAsync(seconds)
         }, time);
@@ -108,7 +108,7 @@ async function CacheUpdateAsync (seconds : number, {noupdate} = {noupdate: false
 
 }
 
-function CacheUpdate (seconds : number, {noupdate} = {noupdate: false}) {
+function CacheUpdate(seconds: number, { noupdate } = { noupdate: false }) {
     const time = seconds * 1000;
     const localTime = new Date();
 
@@ -118,8 +118,8 @@ function CacheUpdate (seconds : number, {noupdate} = {noupdate: false}) {
     }).catch((err) => {
         console.log("Error updating cache", err);
     })
- 
-    if(!noupdate) {
+
+    if (!noupdate) {
         setTimeout(() => {
             CacheUpdateAsync(seconds)
         }, time);
@@ -148,13 +148,14 @@ app.get('/api/visualized/readplaylist/', async (req, res) => {
     </tr>
     `;
 
-    if(Config.dataCaching && cache != null && req.query.forceRefresh===false) {
-        if(IsEmpty(cache.authors) || IsEmpty(cache.titles) && IsEmpty(cache.IDs)) {
+    if (Config.dataCaching && cache != null && req.query.forceRefresh === false) {
+        if (IsEmpty(cache.authors) || IsEmpty(cache.titles) && IsEmpty(cache.IDs)) {
             res.status(503).send("503: API error.")
         } else {
-            const inRangeCache = (i : number) => (i < cache.authors.length && i < cache.titles.length && i < cache.IDs.length);
-            
-            for (let i = 0; inRangeCache(i); i++) {;
+            const inRangeCache = (i: number) => (i < cache.authors.length && i < cache.titles.length && i < cache.IDs.length);
+
+            for (let i = 0; inRangeCache(i); i++) {
+                ;
                 let elements = [cache.authors[i], cache.titles[i], cache.IDs[i]];
 
                 table += `
@@ -177,9 +178,10 @@ app.get('/api/visualized/readplaylist/', async (req, res) => {
         try {
             let response = await sheetReader.GetPlaylist();
 
-            const inRange = (i : number) => (i < response.authors.length && i < response.titles.length && i < response.IDs.length);
-            
-            for (let i = 0; inRange(i); i++) {;
+            const inRange = (i: number) => (i < response.authors.length && i < response.titles.length && i < response.IDs.length);
+
+            for (let i = 0; inRange(i); i++) {
+                ;
                 let elements = [response.authors[i], response.titles[i], response.IDs[i]];
 
                 table += `
@@ -196,8 +198,8 @@ app.get('/api/visualized/readplaylist/', async (req, res) => {
             table += `<style> td { font-family: 'Roboto', sans-serif; border: 1px solid black; background-color: #faedddfd} th { font-family: 'Secular One'; border: 1px solid black;} </style>`
             res.status(200).send(table);
 
-            if(req.query.forceUpdate===true) {
-                CacheUpdateAsync(0, {noupdate: true});
+            if (req.query.forceUpdate === true) {
+                CacheUpdateAsync(0, { noupdate: true });
             }
         } catch (error) {
             res.status(503).send("503: API error.")

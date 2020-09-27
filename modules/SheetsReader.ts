@@ -3,11 +3,12 @@ const { google } = require('googleapis');
 module.exports = class SheetsReader {
 
     private gSheets = null;
-    private spreadsheetKey = '1JhbSnAQdcs4QGnCUx6fZ0ujV9G2k-Wjvs1YoTmoD2i0';
+    private spreadsheetKey = '';
     rawResponse;
     playlist;
-    constructor(API_KEY) {
+    constructor(API_KEY, SHEET_KEY) {
         this.BeginInitialization(API_KEY);
+        this.spreadsheetKey = SHEET_KEY;
     }
 
     private BeginInitialization(key: string) {
