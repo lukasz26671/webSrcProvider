@@ -6,9 +6,12 @@ module.exports = class SheetsReader {
     private spreadsheetKey = '';
     rawResponse;
     playlist;
-    constructor(API_KEY, SHEET_KEY) {
+    ranges;
+
+    constructor(API_KEY, SHEET_KEY, RANGES=['C3:C123', 'D3:D123', 'E3:E123']) {
         this.BeginInitialization(API_KEY);
         this.spreadsheetKey = SHEET_KEY;
+        this.ranges = RANGES;
     }
 
     private BeginInitialization(key: string) {
@@ -18,6 +21,10 @@ module.exports = class SheetsReader {
         })
     }
 
+    /**
+     * Make asynchronous request, returns callback, usage of .then() is possible, although returns void.
+     * @param cb callback made after finishing request
+     */
     public async MakeRequestAsync(cb) {
         this.GetSpreadsheetValues((resp)=> { 
             this.rawResponse = resp;
@@ -28,6 +35,10 @@ module.exports = class SheetsReader {
         
     }
 
+     /**
+     * Make request, returns callback.
+     * @param cb callback made after finishing request
+     */
     public MakeRequest(cb) {
         this.GetSpreadsheetValues((resp)=> { 
             this.rawResponse = resp;
@@ -36,12 +47,12 @@ module.exports = class SheetsReader {
         })
     }
 
-    private async GetSpreadsheetValues(callback, key = this.spreadsheetKey) {
+    private async GetSpreadsheetValues(callback, {ranges, key} = {ranges: this.ranges, key: this.spreadsheetKey}) {
 
 
         this.gSheets.spreadsheets.values.batchGet({
             spreadsheetId: key,
-            ranges: ['C3:C123', 'D3:D123', 'E3:E123']
+            ranges: this.ranges
         }, (err, resp) => {
             callback(resp)
         });
@@ -49,6 +60,9 @@ module.exports = class SheetsReader {
 
     }
 
+     /**
+      * Get audio player playlist data
+      */
     public async GetPlaylist() {
         await this.FormatAudioplayerValues();
         return this.playlist;

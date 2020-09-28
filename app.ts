@@ -40,7 +40,6 @@ let httpServer = app.listen(port, () => {
 })
 
 
-
 app.get('/', (req, res) => {
     res.header('Access-Control-Allow-Origin: *')
     res.status(200).send(
@@ -50,6 +49,11 @@ app.get('/', (req, res) => {
         `)
 });
 
+
+/**
+ * Returns true if array is empty, false otherwise
+ * @param arr Any array.
+ */
 function IsEmpty(arr: Array<any>) {
     return arr.length === 0 ? true : false;
 }
@@ -87,7 +91,11 @@ app.get('/api/readplaylist', async (req, res) => {
     }
 })
 
-
+/**
+ * Update cache asynchronously, after first update, .then() can be used.
+ * @param seconds cache refresh time specified in seconds
+ * @param noupdate update without looping
+ */
 async function CacheUpdateAsync(seconds: number, { noupdate } = { noupdate: false }) {
     const time = seconds * 1000;
     const localTime = new Date();
@@ -108,6 +116,11 @@ async function CacheUpdateAsync(seconds: number, { noupdate } = { noupdate: fals
 
 }
 
+/**
+ * Update cache without creating a new Promise
+ * @param seconds cache refresh time specified in seconds
+ * @param noupdate update without looping
+ */
 function CacheUpdate(seconds: number, { noupdate } = { noupdate: false }) {
     const time = seconds * 1000;
     const localTime = new Date();
@@ -127,12 +140,11 @@ function CacheUpdate(seconds: number, { noupdate } = { noupdate: false }) {
 }
 
 
+
 function NotFound(req, res, next) {
     res.status(404).send('404: Not found')
 }
 
-
-//#endregion
 
 
 app.get('/api/visualized/readplaylist/', async (req, res) => {
@@ -161,7 +173,7 @@ app.get('/api/visualized/readplaylist/', async (req, res) => {
                 table += `
                 <tr>
                     <td>${elements[0]}</td>
-                    <td>${elements[1]}</td>
+                    <td><a href="https://youtube.com/watch?v=${elements[2]}">${elements[1]}</a></td>
                     <td>${elements[2]}</td>
                 </tr>
                 `
@@ -170,7 +182,7 @@ app.get('/api/visualized/readplaylist/', async (req, res) => {
             table += '</table>'
 
             table += `<br><p>Total track length:${cache.authors.length}</p>`
-            table += `<style> td { font-family: 'Roboto', sans-serif; border: 1px solid black; background-color: #faedddfd} th { font-family: 'Secular One'; border: 1px solid black;} </style>`
+            table += `<style> td { font-family: 'Roboto', sans-serif; border: 1px solid black; background-color: #faedddfd} th { font-family: 'Secular One'; border: 1px solid black;} td a:visited { color: inherit} td a { color: inherit; } </style>`
 
             res.status(200).send(table);
         }
@@ -187,7 +199,7 @@ app.get('/api/visualized/readplaylist/', async (req, res) => {
                 table += `
                 <tr>
                     <td>${elements[0]}</td>
-                    <td>${elements[1]}</td>
+                    <td><a href="https://youtube.com/watch?v=${elements[2]}">${elements[1]}</a></td>
                     <td>${elements[2]}</td>
                 </tr>
                 `
@@ -195,7 +207,7 @@ app.get('/api/visualized/readplaylist/', async (req, res) => {
 
             table += '</table>'
             table += `<br><p>Total track length:${response.authors.length}</p>`
-            table += `<style> td { font-family: 'Roboto', sans-serif; border: 1px solid black; background-color: #faedddfd} th { font-family: 'Secular One'; border: 1px solid black;} </style>`
+            table += `<style> td { font-family: 'Roboto', sans-serif; border: 1px solid black; background-color: #faedddfd} th { font-family: 'Secular One'; border: 1px solid black;} td a:visited { color: inherit; } td a { color: inherit; } </style>`
             res.status(200).send(table);
 
             if (req.query.forceUpdate === true) {
