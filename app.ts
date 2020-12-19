@@ -7,11 +7,28 @@ const SheetsReader = require('./modules/SheetsReader')
 require('dotenv').config();
 
 // import { SheetsReader } from './modules/SheetsReader'
-const apikey = process.env.APIKEY
-const port = process.env.PORT || 3300
+
+const vars = {
+    API_KEY: process.env.APIKEY,
+    PORT: process.env.PORT || 3300,
+    SHEET_ID: process.env.SHEET_ID,
+}
+
 
 const app = express();
-const sheetReader = new SheetsReader(apikey, '1JhbSnAQdcs4QGnCUx6fZ0ujV9G2k-Wjvs1YoTmoD2i0');
+
+
+const GetRanges = () => {
+    const ranges = []
+    
+    Config.cols.forEach(letter => {
+        ranges.push(`${letter}${Config.indexStart}:${letter}${Config.maxIndexLength}`)
+    });
+
+    return ranges;
+}
+
+const sheetReader = new SheetsReader(vars.API_KEY, vars.SHEET_ID, GetRanges());
 
 let lastRequestSuccessful = true;
 
@@ -35,8 +52,8 @@ if (Config.dataCaching) {
 }
 
 
-let httpServer = app.listen(port, () => {
-    console.log(`Server running on port ${port}`)
+let httpServer = app.listen(vars.PORT, () => {
+    console.log(`Server running on port ${vars.PORT}`)
 })
 
 
@@ -167,7 +184,7 @@ app.get('/api/visualized/readplaylist/', async (req, res) => {
             const inRangeCache = (i: number) => (i < cache.authors.length && i < cache.titles.length && i < cache.IDs.length);
 
             for (let i = 0; inRangeCache(i); i++) {
-                ;
+                
                 let elements = [cache.authors[i], cache.titles[i], cache.IDs[i]];
 
                 table += `

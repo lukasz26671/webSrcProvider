@@ -2,13 +2,14 @@ const { google } = require('googleapis');
 
 module.exports = class SheetsReader {
 
+    config = require('./config');
     private gSheets = null;
     private spreadsheetKey = '';
     rawResponse;
     playlist;
     ranges;
 
-    constructor(API_KEY, SHEET_KEY, RANGES=['C3:C123', 'D3:D123', 'E3:E123']) {
+    constructor(API_KEY, SHEET_KEY, RANGES=[`C3:C123`, `D3:D123`, `E3:E123`]) {
         this.BeginInitialization(API_KEY);
         this.spreadsheetKey = SHEET_KEY;
         this.ranges = RANGES;
@@ -23,7 +24,7 @@ module.exports = class SheetsReader {
 
     /**
      * Make asynchronous request, returns callback, usage of .then() is possible, although returns void.
-     * @param cb callback made after finishing request
+     * @param {Function} cb  callback made after finishing request
      */
     public async MakeRequestAsync(cb) {
         this.GetSpreadsheetValues((resp)=> { 
@@ -37,12 +38,11 @@ module.exports = class SheetsReader {
 
      /**
      * Make request, returns callback.
-     * @param cb callback made after finishing request
+     * @param {Function} cb callback made after finishing request
      */
     public MakeRequest(cb) {
         this.GetSpreadsheetValues((resp)=> { 
             this.rawResponse = resp;
-
             cb(resp);
         })
     }
