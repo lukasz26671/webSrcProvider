@@ -59,11 +59,14 @@ let httpServer = app.listen(vars.PORT, () => {
 
 app.get('/', (req, res) => {
     res.header('Access-Control-Allow-Origin: *')
-    res.status(200).send(
-        `Everything is up and running! \n Last request: <mark> ${lastRequestSuccessful ? 'succeeded.' : 'failed.'} </mark>
+    let content = `
+    ${ErrorCodeStyle()}
+    <h1>Website Source Provider</h1>
+    <p>Everything is up and running! \n Last request: <mark> ${lastRequestSuccessful ? 'succeeded.' : 'failed.'} </mark>
         <br><a href="./api/visualized/readplaylist">Display playlist as a table</a>
-        <br><a href="./api/readplaylist">Display playlist as a JSON string</a>
-        `)
+        <br><a href="./api/readplaylist">Display playlist as a JSON string</a></p>
+    `
+    res.status(200).send(content)
 });
 
 
@@ -88,7 +91,11 @@ app.get('/api/readplaylist', async (req, res) => {
 
     if (Config.dataCaching && cache != null && req.query.forceRefresh === false) {
         if (IsEmpty(cache.authors) || IsEmpty(cache.titles) && IsEmpty(cache.IDs)) {
-            res.status(503).send("503: API error.")
+            res.status(503).send(`
+                ${ErrorCodeStyle()}
+                <h1>503</h1>
+                <p>Service is unavailable. Try again later.</p>
+            `)
         } else {
             res.status(200).send(cache);
         }
@@ -102,7 +109,11 @@ app.get('/api/readplaylist', async (req, res) => {
                 CacheUpdateAsync(0, { noupdate: true });
             }
         } catch (error) {
-            res.status(503).send("503: API error.")
+            res.status(503).send(`
+                ${ErrorCodeStyle()}
+                <h1>503</h1>
+                <p>Service is unavailable. Try again later.</p>
+            `)
         }
 
     }
@@ -151,17 +162,20 @@ function CacheUpdate(seconds: number, { noupdate } = { noupdate: false }) {
 
     if (!noupdate) {
         setTimeout(() => {
-            CacheUpdateAsync(seconds)
+            CacheUpdate(seconds)
         }, time);
     }
 }
 
 
-
 function NotFound(req, res, next) {
-    res.status(404).send('404: Not found')
+    let content = `
+        ${ErrorCodeStyle()}
+        <h1>404</h1>
+        <p>The page you requested does not exist.</p>
+    `
+    res.status(404).send(content)
 }
-
 
 
 app.get('/api/visualized/readplaylist/', async (req, res) => {
@@ -179,7 +193,11 @@ app.get('/api/visualized/readplaylist/', async (req, res) => {
 
     if (Config.dataCaching && cache != null && req.query.forceRefresh === false) {
         if (IsEmpty(cache.authors) || IsEmpty(cache.titles) && IsEmpty(cache.IDs)) {
-            res.status(503).send("503: API error.")
+            res.status(503).send(`
+                ${ErrorCodeStyle()}
+                <h1>503</h1>
+                <p>Service is unavailable. Try again later.</p>
+            `)
         } else {
             const inRangeCache = (i: number) => (i < cache.authors.length && i < cache.titles.length && i < cache.IDs.length);
 
@@ -230,12 +248,24 @@ app.get('/api/visualized/readplaylist/', async (req, res) => {
             if (req.query.forceUpdate === true) {
                 CacheUpdateAsync(0, { noupdate: true });
             }
+
         } catch (error) {
-            res.status(503).send("503: API error.")
+            res.status(503).send(
+                `
+                ${ErrorCodeStyle()}
+                <h1>503</h1>
+                <p>Service is unavailable. Try again later.</p>
+                `
+            )
         }
 
     }
 
 })
+
+const ErrorCodeStyle = () => {  
+    return `<style>@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap'); @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap'); h1 { font-family: 'Roboto'; } p { font-family: 'Open Sans'}</style>`
+}
+
 
 app.use(NotFound);
