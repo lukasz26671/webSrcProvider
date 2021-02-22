@@ -114,7 +114,7 @@ app.get('/api/readplaylist', async (req, res) => {
     }
 })
 
-app.get('/api/readplaylist', async (req, res) => {
+app.post('/api/readplaylist', async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
 
     res.setHeader('Content-Type', "application/json")
@@ -187,17 +187,6 @@ function CacheUpdate(seconds: number, { noupdate } = { noupdate: false }) {
         }, time);
     }
 }
-
-
-function NotFound(req, res, next) {
-    let content = `
-        ${ErrorCodeStyle()}
-        <h1>404</h1>
-        <p>The page you requested does not exist.</p>
-    `
-    res.status(404).send(content)
-}
-
 
 app.get('/api/visualized/readplaylist/', async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
@@ -305,6 +294,15 @@ function syntaxHighlight(json) {
         }
         return '<span class="' + cls + '">' + match + '</span>';
     });
+}
+
+function NotFound(req, res, next) {
+    let content = `
+        ${ErrorCodeStyle()}
+        <h1>404</h1>
+        <p>The page you requested does not exist.</p>
+    `
+    res.status(404).send(content)
 }
 
 app.use(NotFound);
