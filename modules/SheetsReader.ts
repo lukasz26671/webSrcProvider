@@ -1,13 +1,15 @@
+import { SourceResponse } from "./interfaces";
+
 const { google } = require('googleapis');
 
 module.exports = class SheetsReader {
 
     config = require('./config');
-    private gSheets = null;
-    private spreadsheetKey = '';
-    rawResponse;
-    playlist;
-    ranges;
+    private gSheets: any;
+    private spreadsheetKey: string;
+    rawResponse: object;
+    playlist: SourceResponse;
+    ranges: Array<string>;
 
     constructor(API_KEY, SHEET_KEY, RANGES=[`C3:C123`, `D3:D123`, `E3:E123`]) {
         this.BeginInitialization(API_KEY);
@@ -47,16 +49,17 @@ module.exports = class SheetsReader {
         })
     }
 
-    private async GetSpreadsheetValues(callback, {ranges, key} = {ranges: this.ranges, key: this.spreadsheetKey}) {
+    public async GetSpreadsheetValues(callback, {ranges, key} = {ranges: this.ranges, key: this.spreadsheetKey}) {
 
-
+        let canbreak: boolean = false;
+        let resp: object = null;
         this.gSheets.spreadsheets.values.batchGet({
             spreadsheetId: key,
             ranges: this.ranges
-        }, (err, resp) => {
-            callback(resp)
+        }, (err, _resp) => {
+            callback(_resp)
+            resp = _resp
         });
-
 
     }
 
@@ -74,7 +77,7 @@ module.exports = class SheetsReader {
 
             let emptyIndexes = []
 
-            const response = {
+            const response :SourceResponse = {
                 authors: [],
                 titles: [],
                 IDs: []

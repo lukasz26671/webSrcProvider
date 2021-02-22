@@ -16,7 +16,7 @@ const vars = {
 
 
 const app = express();
-
+app.use(express.urlencoded({extended:true}));
 
 const GetRanges = () => {
     const ranges = []
@@ -51,11 +51,9 @@ if (Config.dataCaching) {
     }
 }
 
-
 let httpServer = app.listen(vars.PORT, () => {
     console.log(`Server running on port ${vars.PORT}`)
 })
-
 
 app.get('/', (req, res) => {
     res.header('Access-Control-Allow-Origin: *')
@@ -69,11 +67,6 @@ app.get('/', (req, res) => {
     res.status(200).send(content)
 });
 
-
-/**
- * Returns true if array is empty, false otherwise
- * @param arr Any array.
- */
 function IsEmpty(arr: Array<any>) {
     return arr.length === 0 ? true : false;
 }
@@ -114,6 +107,33 @@ app.get('/api/readplaylist', async (req, res) => {
                 <h1>503</h1>
                 <p>Service is unavailable. Try again later.</p>
             `)
+        }
+
+    }
+})
+
+app.get('/api/readplaylist', async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+
+    res.setHeader('Content-Type', "application/json")
+
+    if (Config.dataCaching && cache != null && req.query.forceRefresh === false) {
+        if (IsEmpty(cache.authors) || IsEmpty(cache.titles) && IsEmpty(cache.IDs)) {
+            res.status(503).send({status: 503, message: "Service is unavailable. Try again later."})
+        } else {
+            res.status(200).send(cache);
+        }
+    } else {
+        try {
+            res.status(200).send(
+                await sheetReader.GetPlaylist()
+            );
+
+            if (req.body.forceUpdate === true) {
+                CacheUpdateAsync(0, { noupdate: true });
+            }
+        } catch (error) {
+            res.status(503).send({status: 503, message: "Service is unavailable. Try again later."})
         }
 
     }
@@ -269,3 +289,5 @@ const ErrorCodeStyle = () => {
 
 
 app.use(NotFound);
+
+export {};
