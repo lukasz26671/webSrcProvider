@@ -90,12 +90,14 @@ app.get('/api/readplaylist', async (req, res) => {
                 <p>Service is unavailable. Try again later.</p>
             `)
         } else {
-            res.status(200).send(cache);
+            res.status(200).send(
+                syntaxHighlight(JSON.stringify(cache, null, 4))
+            );
         }
     } else {
         try {
             res.status(200).send(
-                await sheetReader.GetPlaylist()
+                JSON.stringify(await sheetReader.GetPlaylist(), null, 4)
             );
 
             if (req.query.forceUpdate === true) {
@@ -125,9 +127,8 @@ app.get('/api/readplaylist', async (req, res) => {
         }
     } else {
         try {
-            res.status(200).send(
-                await sheetReader.GetPlaylist()
-            );
+            
+                res.status(200).send(await sheetReader.GetPlaylist());
 
             if (req.body.forceUpdate === true) {
                 CacheUpdateAsync(0, { noupdate: true });
@@ -283,10 +284,28 @@ app.get('/api/visualized/readplaylist/', async (req, res) => {
 
 })
 
-const ErrorCodeStyle = () => {  
+var ErrorCodeStyle = () => {  
     return `<style>@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap'); @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap'); h1 { font-family: 'Roboto'; } p { font-family: 'Open Sans'}</style>`
 }
 
+function syntaxHighlight(json) {
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        var cls = 'number';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+                cls = 'key';
+            } else {
+                cls = 'string';
+            }
+        } else if (/true|false/.test(match)) {
+            cls = 'boolean';
+        } else if (/null/.test(match)) {
+            cls = 'null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    });
+}
 
 app.use(NotFound);
 
