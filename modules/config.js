@@ -5,8 +5,8 @@ const Config = {
     limitRequests: false,
     asyncCaching: true,
     indexStart: 3,
-    maxIndexLength: 170,
-    cols: ["C", "D", "E"]
+    maxIndexLength: 200,
+    cols: ["C", "D", "E", "F"]
 };
 
 module.exports = {Config};

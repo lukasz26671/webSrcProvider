@@ -1,4 +1,4 @@
-interface ApplicationConfig {
+export default interface ApplicationConfig {
     dataCaching: boolean,
     cacheTime: number,
     corsEnabled: boolean,
@@ -6,10 +6,11 @@ interface ApplicationConfig {
     asyncCaching: boolean,
 }
 
-interface SourceResponse {
+export interface SourceResponse {
     authors: Array<string>,
     titles: Array<string>,
-    IDs: Array<string>
+    IDs: Array<string>,
 }
-
-export { ApplicationConfig, SourceResponse }
+interface Object {
+    filter(object: Object, predicate: any): Array<Object>
+}
