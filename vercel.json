@@ -7,10 +7,20 @@
         }
     ],
     "functions": {
-        "api/readplaylist": {},
-        "api/readplaylist/featured": {},
-        "api/visualized/readplaylist": {},
-        "api/visualized/readplaylist/featured": {},
-        "/": {}
+        "api/readplaylist": {
+            "memory": 1024
+        },
+        "api/readplaylist/featured": {            
+            "memory": 1024
+        },
+        "api/visualized/readplaylist": {
+            "memory": 1024
+        },
+        "api/visualized/readplaylist/featured": {
+            "memory": 1024
+        },
+        "/": {
+            "memory": 1024
+        }
     }
 }
