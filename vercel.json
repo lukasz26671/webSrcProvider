@@ -18,9 +18,6 @@
         },
         "api/visualized/readplaylist/featured": {
             "memory": 1024
-        },
-        "/": {
-            "memory": 1024
         }
     }
 }
