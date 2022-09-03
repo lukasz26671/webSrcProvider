@@ -5,6 +5,9 @@ const express = require('express');
 const cors = require('cors');
 const { Config } = require('./modules/config');
 const SheetsReader = require('./modules/SheetsReader')
+const serverless = require('serverless-http');
+
+const {getContent, saveContent, getLastModified, sleep} = require('./modules/Functions');
 
 require('dotenv').config();
 
@@ -16,7 +19,7 @@ const vars = {
     SHEET_ID: process.env.SHEET_ID,
 }
 
-
+let maxLocal = secondsToMs(Config.maxLocalCacheTime > 0 ? Config.maxLocalCacheTime : 500);
 const app = express();
 app.use(express.urlencoded({extended:true}));
 
@@ -29,31 +32,31 @@ const GetRanges = () => {
 
     return ranges;
 }
-
 const sheetReader = new SheetsReader(vars.API_KEY, vars.SHEET_ID, GetRanges());
 
+const cache_local = `${Config.cacheFolder}\\${Config.cacheName}`
+const featured_local = `${Config.cacheFolder}\\${Config.cacheFeaturedName}`
+
 let lastRequestSuccessful = true;
+
+function secondsToMs(s) {return s * 1000;}
 
 if (Config.corsEnabled)
     app.use(cors());
 
-if (Config.dataCaching) {
-    if (Config.cacheTime > 0) {
-        if (Config.asyncCaching) {
-            CacheUpdateAsync(Config.cacheTime)
+let execConfig = async()=> {
+    if (Config.dataCaching) {
+        if (Config.cacheTime > 0) {
+            await CacheUpdateAsync(Config.cacheTime);
         } else {
-            CacheUpdate(Config.cacheTime)
-        }
-    } else {
-        if (Config.asyncCaching) {
-            CacheUpdateAsync(600)
-        } else {
-            CacheUpdate(600)
+            await CacheUpdateAsync(600);
         }
     }
-}
+};
 
-let httpServer = app.listen(vars.PORT, () => {
+
+let httpServer = app.listen(vars.PORT, async () => {
+    await execConfig();
     console.log(`Server running on port ${vars.PORT}`)
 })
 
@@ -76,16 +79,22 @@ function IsEmpty(arr: Array<any>) {
     return arr.length === 0 ? true : false;
 }
 
-var cache : SourceResponse, 
-cache_featured : SourceResponse = {
+var cache : SourceResponse = {
     authors: [],
     titles: [],
     IDs: []
 }
 
+var cache_featured : SourceResponse = {
+    authors: [],
+    titles: [],
+    IDs: []
+}
+
+
 const CachingCheck = (req : any)=> { return (Config.dataCaching && cache != null && req.query.forceRefresh === false);}
 const EmptyCache = ()=> {return (IsEmpty(cache.authors) || IsEmpty(cache.titles) && IsEmpty(cache.IDs))}
-const EmptyFeaturedCache = ()=> {return (IsEmpty(cache_featured.authors) || IsEmpty(cache_featured.titles) && IsEmpty(cache_featured.IDs))}
+const EmptyFeaturedCache = ()=> {return (IsEmpty(cache.authors) || IsEmpty(cache.titles) && IsEmpty(cache.IDs))}
 
 const NotAvailableHTML = (res) => { 
     res.status(503).send(`
@@ -183,6 +192,8 @@ app.post('/api/readplaylist', async (req : Request, res : Response) => {
 
     if (CachingCheck(req)) {
         if (EmptyCache()) {
+            await CacheUpdateAsync(1000, {noupdate: true})
+            res.redirect(req.originalUrl) 
             return NotAvailableJSON(res);
         } 
         return SendPlaylistAsJson(req, res) 
@@ -202,6 +213,8 @@ app.post('/api/readplaylist/featured', async (req : Request, res : Response) => 
 
     if (CachingCheck(req)) {
         if (EmptyFeaturedCache()) {
+            await CacheUpdateAsync(1000, {noupdate: true})
+            res.redirect(req.originalUrl) 
             return NotAvailableJSON(res);
         } 
         return SendPlaylistAsJson(req, res, {highlight: false, featured: true}) 
@@ -225,12 +238,31 @@ async function CacheUpdateAsync(seconds: number, { noupdate } = { noupdate: fals
     const time = seconds * 1000;
     const localTime = new Date();
 
-    try {
-        cache = await sheetReader.GetPlaylist();
-        cache_featured = await sheetReader.GetFeaturedPlaylist();
+    let ml = await getLastModified(cache_local);
+    let mf = await getLastModified(featured_local);
 
-        console.log(`Cache [normal & featrured] updated @ ${localTime.getHours()}:${localTime.getMinutes()}:${localTime.getSeconds()}`);
-        console.log(cache_featured);
+    try {
+        let now = Date.now();
+        if (ml + maxLocal <= now || mf + maxLocal <= now || noupdate) {
+            // let l_cache = await sheetReader.GetPlaylist()
+            // let l_cache_featured = await sheetReader.GetFeaturedPlaylist()
+            await new Promise((resolve, reject) => { // temp workaround
+                try {
+                sheetReader.GetPlaylistsCb((lc, fc) => {
+                    console.log(lc, fc)
+                    cache = lc
+                    cache_featured = fc
+                    resolve(true);
+                })} catch (e) { reject(e)}
+            })
+            
+            
+            console.log(`Cache [normal & featrured] updated @ ${localTime.getHours()}:${localTime.getMinutes()}:${localTime.getSeconds()}`);
+        } else {
+            cache = JSON.parse(await getContent(cache_local));
+            cache_featured = JSON.parse(await getContent(featured_local));
+        }
+
     } catch (error) {
         console.log("Error updating cache", error);
     }
@@ -250,7 +282,7 @@ async function CacheUpdateAsync(seconds: number, { noupdate } = { noupdate: fals
 function CacheUpdate(seconds: number, { noupdate } = { noupdate: false }) {
     const time = seconds * 1000;
     const localTime = new Date();
-
+    let cache;
     sheetReader.GetPlaylist().then((res : any) => {
         cache = res;
         console.log(`Cache updated @ ${localTime.getHours()}:${localTime.getMinutes()}:${localTime.getSeconds()}`);
@@ -304,9 +336,11 @@ const DisplayTable = (server_res : Response, RangeHandler : any, playlist_respon
 app.get('/api/visualized/readplaylist/', async (req : any, res : any) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
 
-
+a:
     if (CachingCheck(req)) {
         if (EmptyCache()) {
+            await CacheUpdateAsync(1000, {noupdate: true})
+            res.redirect(req.originalUrl) 
             return NotAvailableHTML(res);
         } else {
             const inRangeCache = (i: number) => (i < cache.authors.length && i < cache.titles.length && i < cache.IDs.length);
@@ -337,6 +371,8 @@ app.get('/api/visualized/readplaylist/featured', async (req : any, res : any) =>
 
     if (CachingCheck(req)) {
         if (EmptyCache()) {
+            await CacheUpdateAsync(1000, {noupdate: true})
+            res.redirect(req.originalUrl) 
             return NotAvailableHTML(res);
         } else {
             const inRangeCache = (i: number) => (i < cache_featured.authors.length && i < cache_featured.titles.length && i < cache_featured.IDs.length);
@@ -395,4 +431,5 @@ function NotFound(req : any, res : any, next: Function) {
     res.status(404).send(content)
 }
 app.use(NotFound);
+module.exports.handler = serverless(app);
 

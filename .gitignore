@@ -104,4 +104,7 @@ dist
 .tern-port
 
 app.js
+index.js
 modules/SheetsReader.js
+modules/Functions.js
+temp/*
