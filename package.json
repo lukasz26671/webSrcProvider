@@ -8,7 +8,7 @@
         "build": "npm run build-Reader && npm run build-Main",
         "init-Package": "node index.js",
         "build-Main": "tsc index.ts --target esnext --module esnext",
-        "build-Reader": "cd ./modules && tsc SheetsReader.ts --target esnext --module esnext "
+        "build-Reader": "cd ./modules && tsc SheetsReader.ts --target esnext --module esnext"
     },
     "repository": {
         "type": "git",
