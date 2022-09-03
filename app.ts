@@ -426,5 +426,6 @@ function NotFound(req : any, res : any, next: Function) {
     res.status(404).send(content)
 }
 app.use(NotFound);
+module.exports = app;
 module.exports.handler = serverless(app);
 
