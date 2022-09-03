@@ -31,7 +31,7 @@
         "express": "^4.17.1",
         "googleapis": "^66.0.0",
         "mime": "^2.5.0",
-        "node-fetch": "^3.1.1",
+        "node-fetch": "^3.2.10",
         "serverless-http": "^3.0.2",
         "typescript": "^3.4.3"
     }
