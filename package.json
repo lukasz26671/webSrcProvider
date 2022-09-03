@@ -6,8 +6,8 @@
     "scripts": {
         "start": "npm run init-Package",
         "build": "npm run build-Reader && npm run build-Main",
-        "init-Package": "node app.js",
-        "build-Main": "tsc app.ts --target esnext --module esnext",
+        "init-Package": "node index.js",
+        "build-Main": "tsc index.ts --target esnext --module esnext",
         "build-Reader": "cd ./modules && tsc SheetsReader.ts --target esnext --module esnext"
     },
     "repository": {
