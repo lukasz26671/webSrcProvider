@@ -4,9 +4,10 @@
     "description": "a web app that fetches spreadsheet playlist data",
     "main": "app.ts",
     "scripts": {
-        "start": "npm run build-Reader && npm run build-Main && npm run init-Package",
-        "init-Package": "node app.js",
-        "build-Main": "tsc app.ts --target esnext --module esnext",
+        "start": "npm run init-Package",
+        "build": "npm run build-Reader && npm run build-Main",
+        "init-Package": "node index.js",
+        "build-Main": "tsc index.ts --target esnext --module esnext",
         "build-Reader": "cd ./modules && tsc SheetsReader.ts --target esnext --module esnext "
     },
     "repository": {
