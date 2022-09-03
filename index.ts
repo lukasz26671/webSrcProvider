@@ -44,7 +44,7 @@ function secondsToMs(s) {return s * 1000;}
 if (Config.corsEnabled)
     app.use(cors());
 
-let execConfig = async()=> {
+(async()=> {
     if (Config.dataCaching) {
         if (Config.cacheTime > 0) {
             await CacheUpdateAsync(Config.cacheTime);
@@ -52,13 +52,8 @@ let execConfig = async()=> {
             await CacheUpdateAsync(600);
         }
     }
-};
+})();
 
-
-let httpServer = app.listen(vars.PORT, async () => {
-    await execConfig();
-    console.log(`Server running on port ${vars.PORT}`)
-})
 
 app.get('/', (req : Request, res : Response) => {
     res.header('Access-Control-Allow-Origin: *')
