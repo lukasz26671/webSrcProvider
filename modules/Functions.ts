@@ -6,6 +6,12 @@ async function getContent(filePath, encoding = "utf-8") {
         throw new Error("filePath required");
     }
 
+    await fs.access(filePath, fs.F_OK, async(err) => {
+        if (err) {
+            await fs.writeFile(filePath, "{}", {encoding})
+        }
+    })
+
     return fs.readFile(filePath, { encoding });
 }
 async function saveContent(filePath, data, encoding = "utf-8") {

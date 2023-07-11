@@ -2,7 +2,7 @@
     "name": "websourceprovider",
     "version": "1.0.0",
     "description": "a web app that fetches spreadsheet playlist data",
-    "main": "app.ts",
+    "main": "index.ts",
     "scripts": {
         "start": "npm run init-Package",
         "build": "npm run build-Reader && npm run build-Main && npm run build-Functions",
